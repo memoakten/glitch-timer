@@ -31,13 +31,13 @@ export const warningBehavior = Object.freeze({
   overtimePalette: Object.freeze({
     baseHue: 0,
     hueRange: 360,
-    saturationVariation: 10,
-    backgroundVariation: 8,
-    clockVariation: 5,
-    saturation: 90,
-    backgroundLightness: 30,
-    clockLightness: 80,
-    clockOpacity: 0.5,
+    saturationVariation: 5,
+    backgroundVariation: 5,
+    clockVariation: 0,
+    saturation: 95,
+    backgroundLightness: 75,
+    clockLightness: 8,
+    clockOpacity: 1,
   }),
 });
 

@@ -646,6 +646,13 @@ advance(2000);
 const beforeRapidFlashes = flashes;
 for (let index = 0; index < 100; index++) advance(10);
 assert.equal(flashes - beforeRapidFlashes, 8);
+const brightBackground = flashSnapshots
+  .at(-1)
+  .background.match(/^hsl\([^ ]+ ([\d.]+)% ([\d.]+)%/);
+assert.ok(
+  Number(brightBackground[2]) >= 70,
+  "overtime background flashes stay bright",
+);
 const rapidFlashes = flashSnapshots.slice(-8);
 assert.ok(
   rapidFlashes.every(

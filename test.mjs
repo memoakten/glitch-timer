@@ -164,12 +164,31 @@ assert.ok(hsl(maximum.background)[1] > hsl(halfway.background)[1]);
 assert.ok(hsl(halfway.background)[1] > hsl(initialB.background)[1]);
 assert.ok(hsl(maximum.background)[2] > hsl(halfway.background)[2]);
 assert.equal(hsl(maximum.clock)[0], hsl(maximum.background)[0]);
-assert.ok(hsl(maximum.clock)[2] > hsl(maximum.background)[2]);
-assert.ok(maximum.opacity > 0 && maximum.opacity < 1);
+assert.ok(
+  hsl(maximum.clock)[2] < hsl(maximum.background)[2],
+  "digits contrast with bright flash backgrounds",
+);
+assert.equal(maximum.opacity, 1);
 assert.deepEqual(
   flashColors({ overtime: true, intensity: 2, random: () => 0.75 }),
   maximum,
 );
+
+// Every possible hue stays bright, even at the widest random variation.
+for (const intensity of [0, 0.5, 1]) {
+  for (const sample of [0, 0.25, 0.5, 0.75, 1]) {
+    const colors = flashColors({
+      overtime: true,
+      intensity,
+      random: () => sample,
+    });
+    const [, saturation, lightness] = hsl(colors.background);
+    assert.ok(saturation >= 90 && saturation <= 100);
+    assert.ok(lightness >= 70 && lightness <= 80);
+    assert.ok(hsl(colors.clock)[2] <= 10);
+    assert.equal(colors.opacity, 1);
+  }
+}
 
 assert.equal(escalation(0, c).intensity, 0);
 assert.equal(escalation(c.ramp, c).intensity, 1);
