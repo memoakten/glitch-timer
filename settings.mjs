@@ -1,4 +1,4 @@
-// Shared configuration for parsing, the settings form, sounds, and documentation.
+// Shared configuration for parsing, the settings form, and sounds.
 export const repositoryUrl = "https://github.com/memoakten/glitch-timer";
 export const soundPresets = Object.freeze([
   "pickupCoin",
@@ -68,7 +68,6 @@ export const settingGroups = [
         max: maxDuration,
         help: "Seconds or minutes, using s or m.",
         presets: talkProfiles.map((profile) => profile.duration),
-        description: "Talk duration; plain numbers mean seconds.",
       },
       {
         key: "warn",
@@ -76,8 +75,6 @@ export const settingGroups = [
         label: "First warning at",
         kind: "warning",
         default: "auto",
-        description:
-          "Time remaining at the first flash; then flash at each remaining whole minute. Set 0 to skip early warnings.",
         help: `Auto: ${talkProfiles.map((profile) => `${formatDuration(profile.warning)} for ${formatDuration(profile.duration)}`).join(", ")}+ talks. Set 0 to skip these warnings.`,
       },
       {
@@ -89,8 +86,6 @@ export const settingGroups = [
         min: 0,
         max: maxDuration,
         help: "Warn repeatedly after time is up. Set 0 to disable.",
-        description:
-          "Initial repeat interval after zero, shortening as overtime grows. Set 0 to play the zero alert once without repeat sounds.",
       },
       {
         key: "ramp",
@@ -101,7 +96,6 @@ export const settingGroups = [
         min: 0,
         max: maxDuration,
         help: "Set 0 to disable.",
-        description: `Time overdue until full volume, continuous sound batches, and ${warningBehavior.maxFlashRate} flashes per second with increasingly random colors. Set 0 to keep the initial volume, interval, and flash rate.`,
       },
     ],
   },
@@ -114,7 +108,6 @@ export const settingGroups = [
         label: "Sound enabled",
         kind: "boolean",
         default: true,
-        description: "Enable audio alerts; set false or 0 for a silent timer.",
       },
       {
         key: "sound",
@@ -123,7 +116,6 @@ export const settingGroups = [
         kind: "choice",
         default: "powerUp",
         options: soundPresets,
-        description: "Jsfxr preset, listed below.",
         help: { text: "Uses Jsfxr", href: "https://sfxr.me/" },
       },
       {
@@ -131,7 +123,7 @@ export const settingGroups = [
         id: "sound-count",
         label: "Sounds per alert",
         kind: "integer",
-        default: 3,
+        default: 6,
         min: 1,
         max: 100,
       },
@@ -150,8 +142,6 @@ export const settingGroups = [
         default: percentScale,
         min: 10,
         max: percentScale,
-        description:
-          "Percentage of the largest clock text that fits the screen.",
       },
     ],
   },

@@ -1,13 +1,11 @@
-import { config } from "./logic.mjs";
-import { settingsParameters } from "./settings.mjs";
+import { parseSettings, settingsParameters } from "./settings.mjs";
 
-export const settingsStorageKey = "glitch-timer.settings.v1";
+const settingsStorageKey = "glitch-timer.settings.v1";
 
-export function loadSettings(hash, storage) {
+export function loadSettings(hash) {
   let saved = "";
   try {
-    const browserStorage = storage ?? globalThis.localStorage;
-    saved = browserStorage?.getItem(settingsStorageKey) ?? "";
+    saved = localStorage.getItem(settingsStorageKey) ?? "";
   } catch {
     // Storage may be blocked; URL settings and defaults still work.
   }
@@ -15,14 +13,12 @@ export function loadSettings(hash, storage) {
   const parameters = new URLSearchParams(saved);
   const overrides = new URLSearchParams(hash.replace(/^#/, ""));
   for (const [key, value] of overrides) parameters.set(key, value);
-  return config(parameters.toString());
+  return parseSettings(parameters).values;
 }
 
-export function saveSettings(settings, storage) {
+export function saveSettings(settings) {
   try {
-    const browserStorage = storage ?? globalThis.localStorage;
-    if (!browserStorage) return false;
-    browserStorage.setItem(
+    localStorage.setItem(
       settingsStorageKey,
       settingsParameters(settings).toString(),
     );

@@ -1,9 +1,4 @@
-import { parseSettings, talkProfiles, warningBehavior } from "./settings.mjs";
-export { seconds, formatDuration } from "./settings.mjs";
-
-export function config(hash) {
-  return parseSettings(hash).values;
-}
+import { talkProfiles, warningBehavior } from "./settings.mjs";
 
 // Use the configured closing-stretch warning profile.
 export function warningStart(settings) {
@@ -62,18 +57,14 @@ export function escalation(over, settings) {
   };
 }
 
-export function flashColors({
-  overtime = false,
-  intensity = 0,
-  random = Math.random,
-} = {}) {
+export function flashColors({ overtime = false, intensity = 0 } = {}) {
   const palette = warningBehavior.overtimePalette;
   const progress = overtime ? Math.max(0, Math.min(1, intensity)) : 0;
   // Overtime uses the full hue range immediately. Saturation and brightness
   // vary more widely as the same overtime ramp approaches maximum warnings.
-  const hue = overtime ? random() * palette.hueRange : palette.baseHue;
+  const hue = overtime ? Math.random() * palette.hueRange : palette.baseHue;
   const varied = (base, amount) =>
-    base + (random() * 2 - 1) * amount * progress;
+    base + (Math.random() * 2 - 1) * amount * progress;
   const saturation = varied(palette.saturation, palette.saturationVariation);
   const color = (lightness) => `hsl(${hue} ${saturation}% ${lightness}%)`;
   return {
