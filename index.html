@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#101311" />
+    <title>Lightning · Talk timer</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <span class="brand">ϟ <span>LIGHTNING</span></span>
+      <div class="top">
+        <button id="sound" aria-pressed="true">Sound on</button
+        ><button id="fullscreen">⛶ Full screen</button
+        ><button id="settings">Settings ↗</button>
+      </div>
+    </header>
+    <main>
+      <div id="status">READY WHEN YOU ARE</div>
+      <div id="clock-frame">
+        <div id="clock" role="timer" aria-label="Time remaining">--:--</div>
+      </div>
+      <div id="subtitle"></div>
+      <div class="track"><div id="progress"></div></div>
+      <div class="controls">
+        <button id="reset" title="Reset (R)">↺ <span>Reset</span></button>
+        <button id="start" class="primary">▶ Start timer</button>
+      </div>
+      <div id="milestones"></div>
+    </main>
+    <footer>
+      <span>A LITTLE PRESSURE. A GREAT TALK.</span>
+      <div>
+        <kbd>space</kbd> start / pause <i></i><span id="scrub-hint"></span>
+      </div>
+    </footer>
+    <dialog id="dialog">
+      <form id="form">
+        <div class="dialog-heading">
+          <h1>Timer settings</h1>
+          <button type="button" id="close" aria-label="Close settings">
+            ×
+          </button>
+        </div>
+        <div id="settings-fields"></div>
+        <p id="error" role="alert"></p>
+        <div class="settings-actions">
+          <button class="primary" type="submit">Apply & reset timer</button>
+          <button id="defaults" type="button">Defaults</button>
+        </div>
+        <p class="hint" id="save-hint">
+          Settings save to this browser and the URL.
+        </p>
+      </form>
+    </dialog>
+    <script src="riffwave.js"></script>
+    <script src="sfxr.js"></script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
