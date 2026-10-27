@@ -1,4 +1,5 @@
 // Shared configuration for parsing, the settings form, sounds, and documentation.
+export const repositoryUrl = "https://github.com/memoakten/glitch-timer";
 export const soundPresets = Object.freeze([
   "pickupCoin",
   "laserShoot",
@@ -108,6 +109,14 @@ export const settingGroups = [
     label: "Sound",
     fields: [
       {
+        key: "audio",
+        id: "audio-enabled",
+        label: "Sound enabled",
+        kind: "boolean",
+        default: true,
+        description: "Enable audio alerts; set false or 0 for a silent timer.",
+      },
+      {
         key: "sound",
         id: "alarm-sound",
         label: "Sound preset",
@@ -212,6 +221,12 @@ export function parseSetting(key, raw, current = defaultSettings) {
       if (!Number.isInteger(value) || value < field.min || value > field.max) {
         error = `${field.label}: enter a whole number from ${field.min} to ${field.max}.`;
       }
+      break;
+    case "boolean":
+      const state = String(raw).trim().toLowerCase();
+      if (["true", "1", "on"].includes(state)) value = true;
+      else if (["false", "0", "off"].includes(state)) value = false;
+      else error = `${field.label}: use true or false.`;
       break;
     case "choice":
       value = raw;

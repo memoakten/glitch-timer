@@ -84,10 +84,44 @@ main {
   padding: 8px var(--main-gutter) 16px;
 }
 #status {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  color: #bac5b6;
+  font-size: clamp(18px, 2vw, 24px);
+  font-weight: 750;
+  line-height: 1;
+  letter-spacing: 1.5px;
+}
+body.running #status {
   color: var(--accent);
+}
+body.running #status::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 12px currentColor;
+}
+body.paused #status {
+  color: #ffd085;
+}
+body.paused #status::before {
+  content: "";
+  width: 12px;
+  height: 16px;
+  border: 0;
+  border-left: 4px solid currentColor;
+  border-right: 4px solid currentColor;
+}
+body:not(.running) #clock {
+  opacity: 0.45;
+}
+body:not(.running) #progress {
+  opacity: 0.35;
 }
 #clock-frame {
   display: flex;
@@ -424,4 +458,21 @@ input[type="range"] {
   flex-shrink: 0;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
+}
+
+input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin-top: 4px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.hint a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
 }

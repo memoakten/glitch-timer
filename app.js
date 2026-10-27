@@ -33,7 +33,6 @@ let running = false;
 let startedAt = 0;
 let previousRemaining = settings.time;
 let nextAlertAt = 0;
-let muted = false;
 let audioContext;
 let soundEndsAt = 0;
 let audioRevision = 0;
@@ -66,9 +65,15 @@ function stopSounds() {
 
 function playBatch(
   volume,
-  { sound = settings.sound, count = settings.count, queue = false } = {},
+  {
+    sound = settings.sound,
+    count = settings.count,
+    queue = false,
+    enabled = settings.audio,
+  } = {},
 ) {
-  if (muted || !audioContext || audioContext.state !== "running") return false;
+  if (!enabled || !audioContext || audioContext.state !== "running")
+    return false;
   if (!queue && audioContext.currentTime < soundEndsAt) return false;
 
   let sources;
@@ -147,6 +152,9 @@ function render() {
   if (setText("clock", display)) clockView.fit();
   const title = `${display} · Lightning`;
   if (document.title !== title) document.title = title;
+  const paused = !running && elapsedSeconds > 0;
+  document.body.classList.toggle("running", running);
+  document.body.classList.toggle("paused", paused);
   document.body.classList.toggle(
     "warning",
     timeLeft > 0 && timeLeft <= warningStart(settings),
@@ -161,17 +169,17 @@ function render() {
     timeLeft <= 0 ? "Overtime" : "Time remaining",
   );
 
-  if (!running && elapsedSeconds > 0) {
+  if (paused) {
     setText("status", timeLeft <= 0 ? "PAUSED · OVERTIME" : "PAUSED");
     setText("subtitle", "Take a breath. Pick up where you left off.");
   } else if (timeLeft <= 0) {
-    setText("status", "OVERTIME");
+    setText("status", "RUNNING · OVERTIME");
     setText("subtitle", "Time to bring it home.");
   } else if (running) {
-    setText("status", "MAKE EVERY SECOND COUNT");
+    setText("status", "RUNNING");
     setText("subtitle", "The floor is yours.");
   } else {
-    setText("status", "READY WHEN YOU ARE");
+    setText("status", "READY");
     setText(
       "subtitle",
       `${format(settings.time)} on the clock. One great idea.`,
@@ -289,23 +297,17 @@ function tick() {
 // Timer controls.
 $("start").onclick = toggle;
 $("reset").onclick = reset;
-$("sound").onclick = () => {
-  audio();
-  muted = !muted;
-  stopSounds();
-  $("sound").textContent = muted ? "Sound off" : "Sound on";
-  $("sound").setAttribute("aria-pressed", String(!muted));
-};
-
 function fillSettings(values) {
   for (const field of settingFields) {
-    inputs[field.key].value = formatSetting(field.key, values[field.key]);
+    if (field.kind === "boolean") inputs[field.key].checked = values[field.key];
+    else inputs[field.key].value = formatSetting(field.key, values[field.key]);
     if (field.unit)
       setText(
         `${field.id}-value`,
         formatSetting(field.key, values[field.key], { includeUnit: true }),
       );
   }
+  $("preview-sound").disabled = !inputs.audio.checked;
   clockView.setSize(values.size);
   $("error").textContent = "";
 }
@@ -336,7 +338,11 @@ if (typeof window.ResizeObserver === "function") {
 } else {
   window.addEventListener("resize", clockView.fit);
 }
+inputs.audio.addEventListener("change", () => {
+  if (!inputs.audio.checked && !running) stopSounds();
+});
 $("preview-sound").onclick = async () => {
+  if (!inputs.audio.checked) return;
   if (running) toggle();
   stopSounds();
   const request = audioRevision;
@@ -356,22 +362,26 @@ $("preview-sound").onclick = async () => {
       "Audio is unavailable. Check your browser's sound settings.";
     return;
   }
-  if (muted) {
-    muted = false;
-    $("sound").textContent = "Sound on";
-    $("sound").setAttribute("aria-pressed", "true");
-  }
-  playBatch(0.7, { sound, count });
+  playBatch(0.7, { sound, count, enabled: true });
 };
 $("form").onsubmit = (e) => {
   e.preventDefault();
-  const parsed = parseSettings(new URLSearchParams(new FormData(e.target)));
+  const parameters = new URLSearchParams(new FormData(e.target));
+  // Native forms omit unchecked checkboxes; serialize false explicitly.
+  for (const field of settingFields) {
+    if (field.kind === "boolean")
+      parameters.set(
+        field.key,
+        formatSetting(field.key, inputs[field.key].checked),
+      );
+  }
+  const parsed = parseSettings(parameters);
   if (parsed.errors.length) {
     $("error").textContent = parsed.errors[0];
     return;
   }
   settings = parsed.values;
-  const parameters = settingsParameters(settings);
+  const normalized = settingsParameters(settings);
   const savedLocally = saveSettings(settings);
   setText(
     "save-hint",
@@ -379,7 +389,7 @@ $("form").onsubmit = (e) => {
       ? "Saved in this browser and the URL."
       : "Saved in the URL only; browser storage is unavailable.",
   );
-  history.replaceState(null, "", "#" + parameters);
+  history.replaceState(null, "", "#" + normalized);
   reset();
   $("dialog").close();
 };

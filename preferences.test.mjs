@@ -18,7 +18,7 @@ const storage = {
 
 assert.deepEqual(loadSettings("", storage), config(""));
 const applied = config(
-  "#time=10m&warn=2m&beep=0&ramp=0&sound=explosion&count=5",
+  "#time=10m&warn=2m&beep=0&ramp=0&audio=0&sound=explosion&count=5",
 );
 assert.equal(saveSettings(applied, storage), true);
 assert.deepEqual(
@@ -31,6 +31,9 @@ assert.deepEqual(
   { ...applied, time: 180 },
   "URL values override only the matching saved fields",
 );
+assert.equal(loadSettings("", storage).audio, false);
+assert.equal(loadSettings("#audio=true", storage).audio, true);
+assert.equal(loadSettings("", storage).audio, false);
 assert.deepEqual(
   loadSettings("#time=1m", storage),
   { ...applied, time: 60, warn: "auto" },

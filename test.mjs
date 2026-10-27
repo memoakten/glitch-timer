@@ -5,6 +5,7 @@ import {
   parseSetting,
   defaultSettings,
   settingFields,
+  settingsParameters,
 } from "./settings.mjs";
 import {
   seconds,
@@ -73,6 +74,16 @@ for (const sound of soundPresets) {
   assert.equal(config(`#sound=${sound}`).sound, sound);
 }
 assert.equal(config("#sound=invalid").sound, "powerUp");
+assert.equal(config("").audio, true);
+for (const value of ["true", "1", "on"]) {
+  assert.equal(config(`#audio=${value}`).audio, true);
+}
+for (const value of ["false", "0", "off"]) {
+  assert.equal(config(`#audio=${value}`).audio, false);
+}
+assert.equal(config("#audio=invalid").audio, true);
+assert.notEqual(parseSetting("audio", "invalid").error, "");
+assert.equal(config(settingsParameters(config("#audio=0"))).audio, false);
 assert.equal(escalation(0, c).volume, 0.3);
 assert.equal(escalation(c.ramp, c).volume, 0.95);
 

@@ -48,6 +48,7 @@ function createElement(tagName = "div") {
     tagName: tagName.toUpperCase(),
     textContent: "",
     value: "",
+    checked: false,
     style: {},
     open: false,
     children: [],
@@ -261,6 +262,20 @@ function load(hash) {
   listeners.hashchange();
 }
 
+function applyCurrentSettings() {
+  context.FormData = class {
+    [Symbol.iterator]() {
+      return settingsDefinition.settingFields
+        .filter(
+          (field) => field.kind !== "boolean" || element(field.id).checked,
+        )
+        .map((field) => [field.key, element(field.id).value])
+        [Symbol.iterator]();
+    }
+  };
+  element("form").onsubmit({ preventDefault() {}, target: {} });
+}
+
 function assertBatch(batch, count, preset) {
   assert.equal(batch.length, count);
   for (let index = 0; index < batch.length; index++) {
@@ -305,10 +320,16 @@ assert.equal(new Set(presetOptions).size, presetOptions.length);
 for (const field of settingsDefinition.settingFields) {
   const input = element(field.id);
   assert.equal(input.name, field.key);
-  assert.equal(
-    input.value,
-    settingsDefinition.formatSetting(field.key, field.default),
-  );
+  if (field.kind === "boolean") {
+    assert.equal(input.checked, field.default);
+    assert.equal(input.type, "checkbox");
+    assert.equal(input.required, false);
+  } else {
+    assert.equal(
+      input.value,
+      settingsDefinition.formatSetting(field.key, field.default),
+    );
+  }
   const label = formNodes.find(
     (node) => node.tagName === "LABEL" && node.htmlFor === field.id,
   );
@@ -322,6 +343,12 @@ for (const field of settingsDefinition.settingFields) {
     assert.ok(formNodes.includes(element(`${field.id}-help`)));
   }
 }
+assert.equal(element("github-link").href, settingsDefinition.repositoryUrl);
+assert.doesNotMatch(
+  readFileSync(new URL("index.html", import.meta.url), "utf8"),
+  /id="sound"/,
+  "the header sound toggle is removed",
+);
 for (const name of settingsDefinition.soundPresets) {
   assert.equal(typeof globalThis.jsfxr.Params.prototype[name], "function");
 }
@@ -374,6 +401,28 @@ element("settings").onclick();
 assert.equal(element("alarm-sound").value, "powerUp");
 assert.equal(element("sound-count").value, "3");
 element("dialog").close();
+assert.equal(element("status").textContent, "READY");
+assert.equal(classes.has("running"), false);
+assert.equal(classes.has("paused"), false);
+element("start").onclick();
+assert.equal(element("status").textContent, "RUNNING");
+assert.equal(classes.has("running"), true);
+advance(1000);
+key(" ");
+assert.equal(element("status").textContent, "PAUSED");
+assert.equal(classes.has("running"), false);
+assert.equal(classes.has("paused"), true);
+const pausedClock = element("clock").textContent;
+advance(1000);
+assert.equal(element("clock").textContent, pausedClock);
+key(" ");
+assert.equal(element("status").textContent, "RUNNING");
+assert.equal(classes.has("running"), true);
+assert.equal(classes.has("paused"), false);
+element("reset").onclick();
+assert.equal(element("status").textContent, "READY");
+assert.equal(classes.has("running"), false);
+assert.equal(classes.has("paused"), false);
 element("start").onclick();
 advance(120000);
 assert.equal(flashes, 0);
@@ -401,6 +450,8 @@ assert.match(
 );
 advance(1000);
 const zeroTime = now;
+assert.equal(element("status").textContent, "RUNNING · OVERTIME");
+assert.equal(classes.has("running"), true);
 assert.equal(flashSnapshots.at(-1).overtime, true);
 assert.match(flashSnapshots.at(-1).background, /^hsl\(/);
 assert.match(flashSnapshots.at(-1).clock, /^hsl\(/);
@@ -475,17 +526,40 @@ assert.ok(
   "maximum-overtime batches join exactly without overlapping",
 );
 const pending = sources.filter((source) => !source.ended);
-element("sound").onclick();
+element("settings").onclick();
+element("audio-enabled").checked = false;
+element("audio-enabled").dispatchEvent({ type: "change" });
+assert.equal(element("preview-sound").disabled, true);
+applyCurrentSettings();
 assert.ok(
   pending.every((source) => source.cancelled),
-  "mute cancels active and future sounds",
+  "applying disabled sound cancels active and future sounds",
 );
-const beforeMute = generated.length;
+assert.equal(logic.config(savedHash).audio, false);
+assert.equal(preferences.loadSettings("", browserStorage).audio, false);
+const beforeSilent = generated.length;
+const beforeSilentFlashes = flashes;
+element("start").onclick();
 advance(2000);
-assert.equal(generated.length, beforeMute);
-element("sound").onclick();
-advance(1);
-assert.equal(generated.length, beforeMute + 3);
+assert.equal(generated.length, beforeSilent);
+assert.ok(
+  flashes > beforeSilentFlashes,
+  "flashes continue with sound disabled",
+);
+element("settings").onclick();
+await element("preview-sound").onclick();
+assert.equal(
+  generated.length,
+  beforeSilent,
+  "unchecked sound prevents previews",
+);
+element("audio-enabled").checked = true;
+element("audio-enabled").dispatchEvent({ type: "change" });
+assert.equal(element("preview-sound").disabled, false);
+applyCurrentSettings();
+element("start").onclick();
+advance(2000);
+assert.equal(generated.length, beforeSilent + 3);
 element("reset").onclick();
 const afterReset = generated.length;
 advance(2000);
@@ -607,6 +681,8 @@ assert.equal(logic.seconds(element("beep").value), 10);
 assert.equal(logic.seconds(element("ramp").value), 120);
 assert.equal(element("alarm-sound").value, "powerUp");
 assert.equal(element("sound-count").value, "3");
+assert.equal(element("audio-enabled").checked, true);
+assert.equal(element("preview-sound").disabled, false);
 assert.equal(element("error").textContent, "");
 assert.equal(element("dialog").open, true);
 assert.equal(element("clock").textContent, timerBeforeDefaults);
@@ -734,6 +810,8 @@ element("start").onclick();
 advance(1100);
 element("start").onclick();
 assert.equal(element("status").textContent, "PAUSED · OVERTIME");
+assert.equal(classes.has("running"), false);
+assert.equal(classes.has("paused"), true);
 element("settings").onclick();
 element("defaults").onclick();
 assert.equal(element("duration").value, "5m");
@@ -745,6 +823,10 @@ for (const cancel of [
   () => element("dialog").close(),
   () => element("defaults").onclick(),
   () => element("start").onclick(),
+  () => {
+    element("audio-enabled").checked = false;
+    element("audio-enabled").dispatchEvent({ type: "change" });
+  },
 ]) {
   element("reset").onclick();
   element("settings").onclick();
@@ -790,7 +872,7 @@ assert.equal(playingPreview.cancelled, true);
 
 // A fresh application instance restores preferences even without a URL hash.
 const savedForReload = logic.config(
-  "#time=10m&warn=2m&beep=0&ramp=0&sound=explosion&count=5&size=75",
+  "#time=10m&warn=2m&beep=0&ramp=0&audio=0&sound=explosion&count=5&size=75",
 );
 preferences.saveSettings(savedForReload, browserStorage);
 const applicationSource = readFileSync(
@@ -829,12 +911,19 @@ assert.equal(element("alarm-sound").value, "explosion");
 assert.equal(element("sound-count").value, "5");
 assert.equal(element("clock-size").value, "75");
 assert.equal(element("clock-size-value").textContent, "75%");
+assert.equal(element("audio-enabled").checked, false);
+assert.equal(element("preview-sound").disabled, true);
 reload("#time=3m");
 assert.equal(element("clock").textContent, "03:00");
 assert.equal(element("alarm-sound").value, "explosion");
 assert.equal(element("sound-count").value, "5");
+assert.equal(element("audio-enabled").checked, false);
+assert.deepEqual(preferences.loadSettings("", browserStorage), savedForReload);
+reload("#audio=1");
+assert.equal(element("audio-enabled").checked, true);
+assert.equal(element("preview-sound").disabled, false);
 assert.deepEqual(preferences.loadSettings("", browserStorage), savedForReload);
 
 console.log(
-  "Runtime checks passed: countdown flashes, default powerUp, N fresh sounds per trigger, exact batch scheduling, no overlap, maximum overtime, mute, pause/reset, scrubbing, preview, and URL persistence.",
+  "Runtime checks passed: countdown flashes, default powerUp, N fresh sounds per trigger, exact batch scheduling, no overlap, maximum overtime, sound checkbox, pause/reset, scrubbing, preview, GitHub link, and URL persistence.",
 );

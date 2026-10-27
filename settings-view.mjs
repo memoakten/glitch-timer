@@ -1,5 +1,6 @@
 import {
   settingGroups,
+  repositoryUrl,
   scrubKeys,
   formatDuration,
   formatSetting,
@@ -34,7 +35,7 @@ export function buildSettingsForm(document) {
       );
       input.id = field.id;
       input.name = field.key;
-      input.required = true;
+      input.required = field.kind !== "boolean";
       if (field.kind === "choice") {
         for (const name of field.options) {
           const option = document.createElement("option");
@@ -42,6 +43,9 @@ export function buildSettingsForm(document) {
           option.textContent = name;
           input.append(option);
         }
+      } else if (field.kind === "boolean") {
+        input.type = "checkbox";
+        input.value = formatSetting(field.key, true);
       } else {
         input.type =
           field.control ?? (field.kind === "integer" ? "number" : "text");
@@ -108,6 +112,10 @@ export function buildSettingsForm(document) {
   preview.type = "button";
   preview.textContent = "▶ Preview sound";
   controls.count.append(preview);
+  inputs.audio.addEventListener("change", () => {
+    preview.disabled = !inputs.audio.checked;
+  });
+  document.getElementById("github-link").href = repositoryUrl;
 
   const scrubHelp = document.getElementById("scrub-hint");
   scrubHelp.replaceChildren();
